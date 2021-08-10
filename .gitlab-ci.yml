@@ -1,0 +1,15 @@
+stages:
+  - deploy_2048
+
+deploy_2048:
+  stage: deploy_2048
+  environment: dev
+  image: alpine/k8s:1.16.15 
+  before_script:
+    - apk add gettext
+  script:
+    - cp "charts/app-2048/values.yaml" "charts/app-2048/values2.yaml"
+    - envsubst < "charts/app-2048/values2.yaml" > "charts/app-2048/values.yaml"
+    - echo "Deploying app-2048, image latest"
+    - helm upgrade --install --wait app-2048  charts/app-2048/ -n ${NAMESPACE}
+    - kubectl rollout status -n ${NAMESPACE} --watch "deployment/app-2048"

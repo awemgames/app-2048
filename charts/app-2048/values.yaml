@@ -7,13 +7,6 @@ image:
   tag: "latest"
   pullPolicy: Always
 
-podSecurityContext: {}
-securityContext: {}
-imagePullSecrets: []
-nodeSelector: {}
-tolerations: []
-affinity: {}
-
 deployments:
   - app: app-2048
     labels:
