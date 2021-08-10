@@ -1,0 +1,83 @@
+{{- range .Values.deployments }}
+---
+{{- $config := .configMapData -}}
+{{- $secret := .secretData -}}
+{{- $name := .app -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .app }}
+  namespace: {{ $.Values.namespace }}
+  {{- with .labels }}
+  labels:
+  {{- toYaml . | nindent 4 }}
+  {{- end }}
+  annotations: {{- include "chart-template.gitlabAnnotations" $ | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      {{- with .labels }}
+      {{- toYaml . | nindent 6 }}
+      {{- end }}
+  replicas: {{ .replicaCount }}
+  template:
+    metadata:
+      labels:
+      {{- with .labels }}
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+      annotations:
+      {{- with .pod_annotations }}
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+    {{- with $.Values.imagePullSecrets }}
+      imagePullSecrets: {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with $.Values.podSecurityContext }}
+      securityContext: {{- toYaml . | nindent 8 }}
+    {{- end }}
+      containers:
+        {{- range .containers }}
+        - name: {{ $.Chart.Name }}
+          {{- with $.Values.securityContext }}
+          securityContext: {{- toYaml . | nindent 12 }}
+          {{- end }}
+          image: "{{ $.Values.image.repository }}:{{ $.Values.image.tag }}"
+          imagePullPolicy: {{ $.Values.image.pullPolicy }}
+          {{- if $.env_vars }}
+          env:
+          {{- range $key, $val := $.env_vars }}
+            {{ $key }}: {{ $val | quote }}
+          {{- end -}}
+          {{- if $.uncommonEnv -}}
+          {{- range $key, $val := $.uncommonEnv }}
+            {{ $key }}: {{ $val | quote }}
+          {{- end }}
+          {{- end }}
+          {{- end }}
+          envFrom:
+          {{- if $config }}
+          - configMapRef:
+              name: {{ $name }}-configmap
+          {{- end -}}
+          {{- if $secret }}
+          - secretRef:
+              name: {{ $name }}-secret
+          {{- end }}
+          ports: {{- toYaml .ports | nindent 12 }}
+          livenessProbe: {{- toYaml .livenessProbe | nindent 12 }}
+          readinessProbe: {{- toYaml .readinessProbe | nindent 12 }}
+          command: {{- toYaml .command | nindent 12 }}
+          resources: {{- toYaml .resources | nindent 12 }}
+      {{- end -}}
+      {{- with $.Values.nodeSelector }}
+      nodeSelector: {{- toYaml . | nindent 8 }}
+      {{- end }}
+    {{- with $.Values.affinity }}
+      affinity: {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with $.Values.tolerations }}
+      tolerations: {{- toYaml . | nindent 8 }}
+    {{- end }}
+{{- end }}

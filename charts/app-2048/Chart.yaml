@@ -1,0 +1,5 @@
+apiVersion: v2
+name: app-2048
+description: A test Helm chart for 2048 game
+version: "1.0"
+appVersion: "latest"
